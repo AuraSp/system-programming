@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 int main()
 {
@@ -45,8 +46,40 @@ int main()
     }
     double homeworkAverage = 0.0;
     homeworkAverage = homeworkSum / homeworkMarks.size();
+
+    std::sort(homeworkMarks.begin(), homeworkMarks.end());
+
+    auto middleIndex = homeworkMarks.size() / 2;
+    double homeworkMedian = 0.0;
+
+    if (homeworkMarks.size() % 2 != 0)
+    {
+        homeworkMedian = homeworkMarks[middleIndex];
+    }
+    else
+    {
+        homeworkMedian =
+            (homeworkMarks[middleIndex - 1] + homeworkMarks[middleIndex]) / 2.0;
+    }
+
+    int method = 0;
+    std::cout << "Calculate using: 1 - average, 2 - median: ";
+    std::cin >> method;
+
     double finalGrade = 0.0;
-    finalGrade = (homeworkAverage * 0.4) + (examMark * 0.6);
+
+    if(method == 1) {
+        finalGrade = (homeworkAverage * 0.4) + (examMark * 0.6);
+    }
+    else if (method == 2)
+    {
+        finalGrade = (homeworkMedian * 0.4) + (examMark * 0.6);
+    }
+    else
+    {
+        std::cout << "Invalid choice.\n";
+        return 1;
+    }
 
     std::cout << "Student: " << firstName << ' ' << surName << "\n";
     std::cout << "Exam mark for this student: " << examMark << "\n";
