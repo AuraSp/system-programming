@@ -16,6 +16,11 @@ private:
 
 public:
     //====== METHODS ======//
+    const std::string& getSurname() const
+    {
+        return surName;
+    }
+
     bool read()
     {
         int homeworkMark; // temporary variable for receiving entered marks
@@ -178,10 +183,18 @@ int main()
         std::cin >> another;
     }
 
-    std::cout << '\n'
-              << std::left
-              << std::setw(20) << "Name"
-              << std::setw(20) << "Surname";
+    std::sort(students.begin(), students.end(),
+    //LAMBDA FUNCTION - Should student 'a' come before student 'b'?
+              [](const Person &a, const Person &b)
+              {
+                  return a.getSurname() < b.getSurname();
+              });
+
+    std::cout
+        << '\n'
+        << std::left
+        << std::setw(20) << "Name"
+        << std::setw(20) << "Surname";
 
     if (method == 1)
         std::cout << "Final (Avg.)\n";
