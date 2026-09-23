@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <limits>
+#include <iomanip>
 
 class Person
 {
@@ -23,17 +25,59 @@ public:
         std::cout << "Last name: ";
         std::cin >> surName;
 
-        std::cout << "Exam mark: ";
-        std::cin >> examMark;
-        std::cout << "Add homework marks (-1 to finish): ";
-
-        while (std::cin >> homeworkMark)
+        while (true)
         {
-            if (homeworkMark == -1)
+            std::cout << "Exam mark (1-10): ";
+
+            // CHECKS IF READING NUMBER FAILED
+            if (!(std::cin >> examMark))
             {
-                break;
+                if (std::cin.eof() || std::cin.bad()) // IF INPUT ENDED OR SOMETHING HAPPENED WHILE READING IT - STOP THIS METHOD
+                    return false;
+
+                std::cin.clear();
+                std::cin.ignore(
+                    std::numeric_limits<std::streamsize>::max(), '\n'); // reset the error -> discard the wrong entry -> ask again
+
+                std::cout << "Please enter a whole number.\n";
+                continue;
             }
-            // appends a copy of entered value to the end of the vector
+
+            if (examMark < 1 || examMark > 10)
+            {
+                std::cout << "The mark must be between 1 and 10.\n";
+                continue;
+            }
+
+            break;
+        }
+
+        while (true)
+        {
+            std::cout << "Homework mark (1-10, or -1 to finish): ";
+
+            if (!(std::cin >> homeworkMark))
+            {
+                if (std::cin.eof() || std::cin.bad())
+                    return false;
+
+                std::cin.clear();
+                std::cin.ignore(
+                    std::numeric_limits<std::streamsize>::max(), '\n');
+
+                std::cout << "Please enter a whole number.\n";
+                continue;
+            }
+
+            if (homeworkMark == -1)
+                break;
+
+            if (homeworkMark < 1 || homeworkMark > 10)
+            {
+                std::cout << "The mark must be between 1 and 10.\n";
+                continue;
+            }
+
             homeworkMarks.push_back(homeworkMark);
         }
 
@@ -89,8 +133,11 @@ public:
 
     void print()
     {
-        std::cout << "Student: " << firstName << ' ' << surName << "\n";
-        std::cout << "Final grade: " << finalGrade << "\n";
+        std::cout << std::left
+                  << std::setw(20) << firstName
+                  << std::setw(20) << surName
+                  << std::fixed << std::setprecision(2)
+                  << finalGrade << '\n';
     }
 };
 
@@ -130,6 +177,16 @@ int main()
         std::cout << "Add another student? (y/n): ";
         std::cin >> another;
     }
+
+    std::cout << '\n'
+              << std::left
+              << std::setw(20) << "Name"
+              << std::setw(20) << "Surname";
+
+    if (method == 1)
+        std::cout << "Final (Avg.)\n";
+    else
+        std::cout << "Final (Med.)\n";
 
     // GO THROUGH ALL STORED STUDENTS AND PRINT EACH ONE
     /* like in javscript
