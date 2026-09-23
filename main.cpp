@@ -25,8 +25,8 @@ public:
 
         std::cout << "Exam mark: ";
         std::cin >> examMark;
-
         std::cout << "Add homework marks (-1 to finish): ";
+
         while (std::cin >> homeworkMark)
         {
             if (homeworkMark == -1)
@@ -49,27 +49,24 @@ public:
     bool calculate(int method)
     {
         double homeworkSum = 0.0;
-
-        for (int mark : homeworkMarks)
-        {
-            homeworkSum += mark;
-        }
         double homeworkAverage = 0.0;
+        double homeworkMedian = 0.0;
+
+        // GO THROUGH EACH HOMEWORK MARKS AT A TIME
+        for (int mark : homeworkMarks)
+            homeworkSum += mark; // ADD MARK TO THE TOTAL
         homeworkAverage = homeworkSum / homeworkMarks.size();
 
-        std::sort(homeworkMarks.begin(), homeworkMarks.end());
-
-        auto middleIndex = homeworkMarks.size() / 2;
-        double homeworkMedian = 0.0;
+        std::sort(homeworkMarks.begin(), homeworkMarks.end()); // FROM SMALLEST TO LARGEST MARKS
+        auto middleIndex = homeworkMarks.size() / 2;           // FIND MIDDLE MARK FROM ALL MARKS.LENGTH()
 
         if (homeworkMarks.size() % 2 != 0)
         {
-            homeworkMedian = homeworkMarks[middleIndex];
+            homeworkMedian = homeworkMarks[middleIndex]; // GET THAT MIDDLE MARK FROM MIDDLE POSITION AFTER USING .SIZE()
         }
         else
         {
-            homeworkMedian =
-                (homeworkMarks[middleIndex - 1] + homeworkMarks[middleIndex]) / 2.0;
+            homeworkMedian = (homeworkMarks[middleIndex - 1] + homeworkMarks[middleIndex]) / 2.0;
         }
 
         if (method == 1)
@@ -86,6 +83,7 @@ public:
             return false;
         }
 
+        // IF SUCCEEDED - TELL THE MAIN() AND STORE GRADE IN FINAL
         return true;
     }
 
@@ -98,26 +96,51 @@ public:
 
 int main()
 {
+    std::cout << "==== STUDENT GRADE CALCULATOR ====\n";
 
-    std::cout << "Student grade calculator\n";
-
-    Person student;
-
-    if (!student.read())
-    {
-        return 1;
-    }
+    std::vector<Person> students;
 
     int method = 0;
     std::cout << "Calculate using: 1 - average, 2 - median: ";
     std::cin >> method;
 
-    if (!student.calculate(method))
+    char another = 'y';
+
+    while (another == 'y')
     {
-        return 1;
+        // CREATE FRESH STUDENT FOR THIS INPUT
+        Person student;
+
+        // IF INPUT METHOD READS FAILURE - IT ENDS THE PROGRAM
+        if (!student.read())
+        {
+            return 1;
+        }
+
+        // IF WRONG INPUT CHOICE OR FAILS TO RUN THE METHOD - RETURNS FALSE
+        if (!student.calculate(method))
+        {
+            // REPORTS AN ERROR AND ENDS THE PROGRAM
+            return 1;
+        }
+
+        // DO A COPY AND STORE IT FOR 'THIS' STUDENT, INCLUDING HIS MARKS AND RESULT
+        students.push_back(student);
+
+        std::cout << "Add another student? (y/n): ";
+        std::cin >> another;
     }
 
-    student.print();
+    // GO THROUGH ALL STORED STUDENTS AND PRINT EACH ONE
+    /* like in javscript
+            for (const student of students) {
+                student.print();
+            }
+    */
+    for (Person &student : students)
+    {
+        student.print();
+    }
 
     return 0;
 }
