@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <limits>
 #include <iomanip>
+#include <cstdlib> // rand() and srand()
+#include <ctime>   // time()
 
 class Person
 {
@@ -16,9 +18,22 @@ private:
 
 public:
     //====== METHODS ======//
-    const std::string& getSurname() const
+    const std::string &getSurname() const
     {
         return surName;
+    }
+
+    void generateMarks(int count)
+    {
+        homeworkMarks.clear();
+
+        for (int i = 0; i < count; ++i)
+        {
+            int mark = std::rand() % 10 + 1;
+            homeworkMarks.push_back(mark);
+        }
+
+        examMark = std::rand() % 10 + 1;
     }
 
     bool read()
@@ -29,6 +44,24 @@ public:
         std::cin >> firstName;
         std::cout << "Last name: ";
         std::cin >> surName;
+
+        char randomChoice;
+
+        std::cout << "Generate random marks? (y/n): ";
+        if (!(std::cin >> randomChoice))
+            return false;
+
+        if (randomChoice == 'y')
+        {
+            generateMarks(5);
+            return true;
+        }
+
+        if (randomChoice != 'n')
+        {
+            std::cout << "Invalid choice. Enter y or n.\n";
+            return false;
+        }
 
         while (true)
         {
@@ -150,6 +183,7 @@ int main()
 {
     std::cout << "==== STUDENT GRADE CALCULATOR ====\n";
 
+    std::srand(std::time(nullptr));
     std::vector<Person> students;
 
     int method = 0;
@@ -184,7 +218,7 @@ int main()
     }
 
     std::sort(students.begin(), students.end(),
-    //LAMBDA FUNCTION - Should student 'a' come before student 'b'?
+              // LAMBDA FUNCTION - Should student 'a' come before student 'b'?
               [](const Person &a, const Person &b)
               {
                   return a.getSurname() < b.getSurname();
