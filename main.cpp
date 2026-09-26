@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <random>
 
 class Person
 {
@@ -19,23 +20,70 @@ private:
     double finalMedian = 0.0;
 
 public:
+    //====== CONSTRUCTOR ======//
+    Person() = default; // ALLOW CREATING STUDENT WITHOUT GIVING INFO
+
+    Person(std::string name, std::string surname)
+    {
+        firstName = name;
+        surName = surname;
+    }
+
+    Person(const Person &other) = default; // CREATE STUDENT BY COPYING ANOTHER
+
+    //====== COPY ASSIGNMENT ======//
+    Person &operator=(const Person &other) = default; // replace student's info with a copy of another student's info
+
+    //====== DESTRUCTOR ======//
+    ~Person() = default; // AUTOMATIC CLEANUP WHEN STUDENT OBJECT IS DESTROYED
+
+    /*
+    Inside each input loop iteration:
+
+    Person student;              // 1. Create a local student.
+    student.read();              // 2. Fill it with names and marks.
+    student.calculate(method);   // 3. Calculate the result.
+    students.push_back(student); // 4. Store a separate copy in the vector.
+
+    At this exact point, two student objects exist: the local student and its stored copy. When we reach the loop’s closing `}`, the local student’s lifetime ends. C++ automatically calls its destructor --> ~Person() = default . Now they clean up their storage, yet the stored copy remains untouched. MEMORY SAVING WHEN NO LONGER NEED.
+
+    When main() ends, the students vector and its stored students
+    are also destroyed.
+
+    C++ already provided a destructor before we wrote this line.
+    "= default" specifically asking C++ to keep its automatic cleanup.
+    */
+
     //====== METHODS ======//
     const std::string &getSurname() const
     {
         return surName;
     }
 
+    const std::string &getName() const
+    {
+        return firstName;
+    }
+
+    double getFinalGrade() const
+    {
+        return finalGrade;
+    }
+
     void generateMarks(int count)
     {
+
+        static std::mt19937 generator(std::random_device{}());
+        std::uniform_int_distribution<int> mark(1, 10);
+
         homeworkMarks.clear();
 
         for (int i = 0; i < count; ++i)
         {
-            int mark = std::rand() % 10 + 1;
-            homeworkMarks.push_back(mark);
+            homeworkMarks.push_back(mark(generator));
         }
 
-        examMark = std::rand() % 10 + 1;
+        examMark = mark(generator);
     }
 
     bool readFromLine(const std::string &line)
@@ -119,6 +167,7 @@ public:
 
             break;
         }
+        const int minimumHomeworkCount = 5;
 
         while (true)
         {
@@ -138,7 +187,20 @@ public:
             }
 
             if (homeworkMark == -1)
+            {
+                if (homeworkMarks.size() < minimumHomeworkCount)
+                {
+                    std::cout << "At least " << minimumHomeworkCount
+                              << " homework marks are required.\n";
+
+                    std::cout << "You have entered " << homeworkMarks.size()
+                              << ". Please enter " << minimumHomeworkCount - homeworkMarks.size() << " more.\n";
+
+                    continue;
+                }
+
                 break;
+            }
 
             if (homeworkMark < 1 || homeworkMark > 10)
             {
@@ -202,7 +264,8 @@ public:
         return true;
     }
 
-    void print(bool showBoth)
+    void print(bool showBoth, std::ostream &output = std::cout) const
+    // ostream& output receive outoput destination and use temrinal if none is provided. Const - printing won't change this student
     {
         std::cout << std::left
                   << std::setw(20) << firstName
@@ -221,11 +284,35 @@ public:
     }
 };
 
+// DEFINE HOW TO PRINT A PERSON USING <<
+std::ostream &operator<<(std::ostream &output, const Person &student)
+// no const in the end because reading changes it.
+{
+    student.print(false, output);
+    return output;
+}
+
+std::istream &operator>>(std::istream &input, Person &student)
+{
+    std::string line;
+
+    if (std::getline(input, line))
+    // one row
+    {
+        if (!student.readFromLine(line))
+        // separate this row into names and marks
+        {
+            input.setstate(std::ios::failbit); // MARKS THE INPUT AS FAILED IF THAT METHOD REJECTS THE ROW
+        }
+    }
+
+    return input;
+}
+
 int main()
 {
     std::cout << "==== STUDENT GRADE CALCULATOR ====\n";
 
-    std::srand(std::time(nullptr));
     std::vector<Person> students;
 
     int method = 0;
@@ -256,7 +343,9 @@ int main()
         {
             Person student;
 
-            if (!student.readFromLine(line))
+            std::istringstream row(line);
+
+            if (!(row >> student))
             {
                 std::cout << "Invalid student row.\n";
                 return 1;
@@ -294,12 +383,62 @@ int main()
         return 1;
     }
 
-    std::sort(students.begin(), students.end(),
-              // LAMBDA FUNCTION - Should student 'a' come before student 'b'?
-              [](const Person &a, const Person &b)
-              {
-                  return a.getSurname() < b.getSurname();
-              });
+    // LAMBDA FUNCTION - Should student 'a' come before student 'b'?
+
+    int sortChoice = 0;
+
+    std::cout << "\nSort students by:\n"
+              << "1. Name A-Z\n"
+              << "2. Name Z-A\n"
+              << "3. Final grade: lowest first\n"
+              << "4. Final grade: highest first\n"
+              << "Grade sorting uses your selected average/median method.\n"
+              << "Choice: ";
+
+    if (!(std::cin >> sortChoice))
+    {
+        std::cout << "Please enter a number.\n";
+        return 1;
+    }
+
+    switch (sortChoice)
+    {
+    case 1:
+        std::sort(students.begin(), students.end(),
+                  [](const Person &a, const Person &b)
+                  {
+                      return a.getName() < b.getName();
+                  });
+        break;
+
+    case 2:
+        std::sort(students.begin(), students.end(),
+                  [](const Person &a, const Person &b)
+                  {
+                      return a.getName() > b.getName();
+                  });
+        break;
+
+    case 3:
+        std::sort(students.begin(), students.end(),
+                  [](const Person &a, const Person &b)
+                  {
+                      return a.getFinalGrade() < b.getFinalGrade();
+                  });
+        break;
+
+    case 4:
+        std::sort(students.begin(), students.end(),
+                  [](const Person &a, const Person &b)
+                  {
+                      return a.getFinalGrade() > b.getFinalGrade();
+                  });
+        break;
+
+    default:
+        std::cout << "Invalid choice. Enter 1-4.\n";
+        return 1;
+    }
 
     std::cout
         << '\n'
@@ -329,7 +468,14 @@ int main()
     */
     for (Person &student : students)
     {
-        student.print(source == 2);
+        if (source == 2)
+        {
+            student.print(source == 2);
+        }
+        else
+        {
+            std::cout << student;
+        }
     }
 
     return 0;
