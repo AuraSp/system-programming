@@ -95,10 +95,20 @@ public:
 
         homeworkMarks.clear();
 
-        int mark;
+        std::string entry;
 
-        while (input >> mark)
+        while (input >> entry)
         {
+            std::istringstream markInput(entry);
+            int mark;
+            char extra;
+
+            if (!(markInput >> mark))
+                return false;
+
+            if (markInput >> extra)
+                return false;
+
             if (mark < 1 || mark > 10)
                 return false;
 
@@ -123,22 +133,52 @@ public:
         std::cout << "Last name: ";
         std::cin >> surName;
 
-        char randomChoice;
+        // char randomChoice;
 
-        std::cout << "Generate random marks? (y/n): ";
-        if (!(std::cin >> randomChoice))
-            return false;
+        // std::cout << "Generate random marks? (y/n): ";
+        // if (!(std::cin >> randomChoice))
+        //     return false;
 
-        if (randomChoice == 'y')
+        // if (randomChoice == 'y')
+        // {
+        //     generateMarks(5);
+        //     return true;
+        // }
+
+        // if (randomChoice != 'n')
+        // {
+        //     std::cout << "Invalid choice. Enter y or n.\n";
+        //     return false;
+        // }
+
+        // std::cin.ignore(
+        //     std::numeric_limits<std::streamsize>::max(), '\n');
+
+        std::cin.ignore(
+            std::numeric_limits<std::streamsize>::max(), '\n');
+
+        std::string randomChoice;
+
+        while (true)
+        {
+            std::cout << "Generate random marks? (y/n): ";
+
+            if (!std::getline(std::cin, randomChoice))
+                return false;
+
+            if (randomChoice == "y" || randomChoice == "Y" ||
+                randomChoice == "n" || randomChoice == "N")
+            {
+                break;
+            }
+
+            std::cout << "Please enter y or n.\n";
+        }
+
+        if (randomChoice == "y" || randomChoice == "Y")
         {
             generateMarks(5);
             return true;
-        }
-
-        if (randomChoice != 'n')
-        {
-            std::cout << "Invalid choice. Enter y or n.\n";
-            return false;
         }
 
         while (true)
@@ -146,16 +186,23 @@ public:
             std::cout << "Exam mark (1-10): ";
 
             // CHECKS IF READING NUMBER FAILED
-            if (!(std::cin >> examMark))
+            std::string line;
+
+            if (!std::getline(std::cin, line))
+                return false;
+
+            std::istringstream input(line);
+            char extra;
+
+            if (!(input >> examMark))
             {
-                if (std::cin.eof() || std::cin.bad()) // IF INPUT ENDED OR SOMETHING HAPPENED WHILE READING IT - STOP THIS METHOD
-                    return false;
-
-                std::cin.clear();
-                std::cin.ignore(
-                    std::numeric_limits<std::streamsize>::max(), '\n'); // reset the error -> discard the wrong entry -> ask again
-
                 std::cout << "Please enter a whole number.\n";
+                continue;
+            }
+
+            if (input >> extra)
+            {
+                std::cout << "Please enter only one whole number per line.\n";
                 continue;
             }
 
@@ -173,16 +220,23 @@ public:
         {
             std::cout << "Homework mark (1-10, or -1 to finish): ";
 
-            if (!(std::cin >> homeworkMark))
+            std::string line;
+
+            if (!std::getline(std::cin, line))
+                return false;
+
+            std::istringstream input(line);
+            char extra;
+
+            if (!(input >> homeworkMark))
             {
-                if (std::cin.eof() || std::cin.bad())
-                    return false;
-
-                std::cin.clear();
-                std::cin.ignore(
-                    std::numeric_limits<std::streamsize>::max(), '\n');
-
                 std::cout << "Please enter a whole number.\n";
+                continue;
+            }
+
+            if (input >> extra)
+            {
+                std::cout << "Please enter only one whole number per line.\n";
                 continue;
             }
 
@@ -267,26 +321,26 @@ public:
     void print(bool showBoth, std::ostream &output = std::cout) const
     // ostream& output receive outoput destination and use temrinal if none is provided. Const - printing won't change this student
     {
-        std::cout << std::left
-                  << std::setw(20) << firstName
-                  << std::setw(20) << surName
-                  << std::fixed << std::setprecision(2);
+        output << std::left
+               << std::setw(20) << firstName
+               << std::setw(20) << surName
+               << std::fixed << std::setprecision(2);
 
         if (showBoth)
         {
-            std::cout << std::setw(15)
-                      << finalAverage << finalMedian << '\n';
+            output << std::setw(15)
+                   << finalAverage << finalMedian << '\n';
         }
         else
         {
-            std::cout << finalGrade << '\n';
+            output << finalGrade << '\n';
         }
     }
 };
 
 // DEFINE HOW TO PRINT A PERSON USING <<
 std::ostream &operator<<(std::ostream &output, const Person &student)
-// no const in the end because reading changes it.
+// print student without changing it
 {
     student.print(false, output);
     return output;
@@ -316,14 +370,81 @@ int main()
     std::vector<Person> students;
 
     int method = 0;
-    std::cout << "Calculate using: 1 - average, 2 - median: ";
-    std::cin >> method;
 
-    int source;
+    while (true)
+    {
+        std::cout << "Calculate using: 1 - average, 2 - median: ";
+        std::string line;
 
-    std::cout << "Read students: 1 - keyboard, 2 - file: ";
-    if (!(std::cin >> source))
-        return 1;
+        if (!std::getline(std::cin, line))
+            return 1;
+
+        std::istringstream input(line);
+        char extra;
+
+        if (!(input >> method))
+        {
+            std::cout << "Please enter one whole number.\n";
+            continue;
+        }
+
+        if (input >> extra)
+        {
+            std::cout << "Please enter only one whole number.\n";
+            continue;
+        }
+
+        if (method != 1 && method != 2)
+        {
+            std::cout << "Choose 1 for average or 2 for median.\n";
+            continue;
+        }
+
+        /*
+        f -> cannot read as a number -> asking again
+        1.5 -> reads 1, then finds extra `.` -> rejecting
+        1 2 -> reads 1, then finds extra `2` after space -> rejecting
+        0 -> valid integers, but not valid choice -> rejecting
+        1 or 2 alone -> accepted choices
+        */
+
+        break;
+    }
+
+    int source = 0;
+
+    while (true)
+    {
+        std::cout << "Read students: 1 - manual entering, 2 - file: ";
+
+        std::string line;
+
+        if (!std::getline(std::cin, line))
+            return 1;
+
+        std::istringstream input(line);
+        char extra;
+
+        if (!(input >> source))
+        {
+            std::cout << "Please enter a whole number.\n";
+            continue;
+        }
+
+        if (input >> extra)
+        {
+            std::cout << "Please enter only one whole number.\n";
+            continue;
+        }
+
+        if (source != 1 && source != 2)
+        {
+            std::cout << "Choose 1 for manual entering or 2 for file.\n";
+            continue;
+        }
+
+        break;
+    }
 
     if (source == 2)
     {
@@ -359,9 +480,9 @@ int main()
     }
     else if (source == 1)
     {
-        char another = 'y';
+        std::string another = "y";
 
-        while (another == 'y')
+        while (another == "y" || another == "Y")
         {
             Person student;
 
@@ -373,8 +494,21 @@ int main()
 
             students.push_back(student);
 
-            std::cout << "Add another student? (y/n): ";
-            std::cin >> another;
+            while (true)
+            {
+                std::cout << "Add another student? (y/n): ";
+
+                if (!std::getline(std::cin, another))
+                    return 1;
+
+                if (another == "y" || another == "Y" ||
+                    another == "n" || another == "N")
+                {
+                    break;
+                }
+
+                std::cout << "Please enter y or n.\n";
+            }
         }
     }
     else
@@ -382,8 +516,6 @@ int main()
         std::cout << "Invalid choice.\n";
         return 1;
     }
-
-    // LAMBDA FUNCTION - Should student 'a' come before student 'b'?
 
     int sortChoice = 0;
 
@@ -395,10 +527,37 @@ int main()
               << "Grade sorting uses your selected average/median method.\n"
               << "Choice: ";
 
-    if (!(std::cin >> sortChoice))
+    while (true)
     {
-        std::cout << "Please enter a number.\n";
-        return 1;
+        std::cout << "Choice: ";
+
+        std::string line;
+
+        if (!std::getline(std::cin, line))
+            return 1;
+
+        std::istringstream input(line);
+        char extra;
+
+        if (!(input >> sortChoice))
+        {
+            std::cout << "Please enter a whole number.\n";
+            continue;
+        }
+
+        if (input >> extra)
+        {
+            std::cout << "Please enter only one whole number.\n";
+            continue;
+        }
+
+        if (sortChoice < 1 || sortChoice > 4)
+        {
+            std::cout << "Choose a number from 1 to 4.\n";
+            continue;
+        }
+
+        break;
     }
 
     switch (sortChoice)
@@ -436,7 +595,7 @@ int main()
         break;
 
     default:
-        std::cout << "Invalid choice. Enter 1-4.\n";
+        std::cout << "f choice. Enter 1-4.\n";
         return 1;
     }
 
