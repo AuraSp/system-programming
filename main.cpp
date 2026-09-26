@@ -524,8 +524,7 @@ int main()
               << "2. Name Z-A\n"
               << "3. Final grade: lowest first\n"
               << "4. Final grade: highest first\n"
-              << "Grade sorting uses your selected average/median method.\n"
-              << "Choice: ";
+              << "Grade sorting uses your selected average/median method.\n";
 
     while (true)
     {
