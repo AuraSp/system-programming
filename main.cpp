@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <limits>
 #include <iomanip>
-#include <cstdlib> // rand() and srand()
-#include <ctime>   // time()
+#include <fstream>
+#include <sstream>
 
 class Person
 {
@@ -15,6 +15,8 @@ private:
     int examMark = 0;
     std::vector<int> homeworkMarks;
     double finalGrade = 0.0;
+    double finalAverage = 0.0;
+    double finalMedian = 0.0;
 
 public:
     //====== METHODS ======//
@@ -34,6 +36,34 @@ public:
         }
 
         examMark = std::rand() % 10 + 1;
+    }
+
+    bool readFromLine(const std::string &line)
+    {
+        std::istringstream input(line);
+
+        if (!(input >> firstName >> surName))
+            return false;
+
+        homeworkMarks.clear();
+
+        int mark;
+
+        while (input >> mark)
+        {
+            if (mark < 1 || mark > 10)
+                return false;
+
+            homeworkMarks.push_back(mark);
+        }
+
+        if (homeworkMarks.size() < 2) // AT LEAST ONE HOMEWORK MARK AND ONE EXAM MARK
+            return false;
+
+        examMark = homeworkMarks.back();
+        homeworkMarks.pop_back();
+
+        return true;
     }
 
     bool read()
@@ -151,13 +181,16 @@ public:
             homeworkMedian = (homeworkMarks[middleIndex - 1] + homeworkMarks[middleIndex]) / 2.0;
         }
 
+        finalAverage = homeworkAverage * 0.4 + examMark * 0.6;
+        finalMedian = homeworkMedian * 0.4 + examMark * 0.6;
+
         if (method == 1)
         {
-            finalGrade = (homeworkAverage * 0.4) + (examMark * 0.6);
+            finalGrade = finalAverage;
         }
         else if (method == 2)
         {
-            finalGrade = (homeworkMedian * 0.4) + (examMark * 0.6);
+            finalGrade = finalMedian;
         }
         else
         {
@@ -169,13 +202,22 @@ public:
         return true;
     }
 
-    void print()
+    void print(bool showBoth)
     {
         std::cout << std::left
                   << std::setw(20) << firstName
                   << std::setw(20) << surName
-                  << std::fixed << std::setprecision(2)
-                  << finalGrade << '\n';
+                  << std::fixed << std::setprecision(2);
+
+        if (showBoth)
+        {
+            std::cout << std::setw(15)
+                      << finalAverage << finalMedian << '\n';
+        }
+        else
+        {
+            std::cout << finalGrade << '\n';
+        }
     }
 };
 
@@ -190,31 +232,66 @@ int main()
     std::cout << "Calculate using: 1 - average, 2 - median: ";
     std::cin >> method;
 
-    char another = 'y';
+    int source;
 
-    while (another == 'y')
+    std::cout << "Read students: 1 - keyboard, 2 - file: ";
+    if (!(std::cin >> source))
+        return 1;
+
+    if (source == 2)
     {
-        // CREATE FRESH STUDENT FOR THIS INPUT
-        Person student;
+        std::ifstream file("Students.txt");
 
-        // IF INPUT METHOD READS FAILURE - IT ENDS THE PROGRAM
-        if (!student.read())
+        if (!file.is_open())
         {
+            std::cout << "Could not open Students.txt.\n";
             return 1;
         }
 
-        // IF WRONG INPUT CHOICE OR FAILS TO RUN THE METHOD - RETURNS FALSE
-        if (!student.calculate(method))
+        std::string line;
+
+        std::getline(file, line);
+
+        while (std::getline(file, line))
         {
-            // REPORTS AN ERROR AND ENDS THE PROGRAM
-            return 1;
+            Person student;
+
+            if (!student.readFromLine(line))
+            {
+                std::cout << "Invalid student row.\n";
+                return 1;
+            }
+
+            if (!student.calculate(method))
+                return 1;
+
+            students.push_back(student);
         }
+    }
+    else if (source == 1)
+    {
+        char another = 'y';
 
-        // DO A COPY AND STORE IT FOR 'THIS' STUDENT, INCLUDING HIS MARKS AND RESULT
-        students.push_back(student);
+        while (another == 'y')
+        {
+            Person student;
 
-        std::cout << "Add another student? (y/n): ";
-        std::cin >> another;
+            if (!student.read())
+                return 1;
+
+            if (!student.calculate(method))
+                return 1;
+
+            students.push_back(student);
+
+            std::cout << "Add another student? (y/n): ";
+            std::cin >> another;
+        }
+    }
+    else
+    {
+        std::cout << "Invalid choice.\n";
+        return 1;
     }
 
     std::sort(students.begin(), students.end(),
@@ -230,10 +307,19 @@ int main()
         << std::setw(20) << "Name"
         << std::setw(20) << "Surname";
 
-    if (method == 1)
+    if (source == 2)
+    {
+        std::cout << std::setw(15) << "Final (Avg.)"
+                  << "Final (Med.)\n";
+    }
+    else if (method == 1)
+    {
         std::cout << "Final (Avg.)\n";
+    }
     else
+    {
         std::cout << "Final (Med.)\n";
+    }
 
     // GO THROUGH ALL STORED STUDENTS AND PRINT EACH ONE
     /* like in javscript
@@ -243,7 +329,7 @@ int main()
     */
     for (Person &student : students)
     {
-        student.print();
+        student.print(source == 2);
     }
 
     return 0;
