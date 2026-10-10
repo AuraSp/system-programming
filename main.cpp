@@ -1,14 +1,85 @@
 #include "Person.h" // Makes the Person class and stream operators available.
+#include "FileGenerator.h"
+#include "ResultsWriter.h"
 
 #include <algorithm>
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-
+#include <chrono> // For measuring elpsed time
 
 int main()
 {
     std::cout << "==== STUDENT GRADE CALCULATOR ====\n";
+
+    std::string action;
+
+    while (true)
+    {
+        std::cout << "1 - Calculate student grades\n"
+                  << "2 - Generate a student file\n"
+                  << "Choose: ";
+
+        if (!std::getline(std::cin, action))
+            return 1;
+
+        if (action == "1" || action == "2")
+            break;
+
+        std::cout << "Please enter 1 or 2.\n";
+    }
+
+    if (action == "2")
+    {
+        const int sizes[] = {1000, 10000, 100000, 1000000, 10000000};
+        int sizeChoice = 0;
+
+        while (true)
+        {
+            std::cout << "How many students?\n"
+                      << "1 - 1,000\n"
+                      << "2 - 10,000\n"
+                      << "3 - 100,000\n"
+                      << "4 - 1,000,000\n"
+                      << "5 - 10,000,000\n"
+                      << "Choose: ";
+
+            std::string line;
+            if (!std::getline(std::cin, line))
+                return 1;
+
+            std::istringstream input(line);
+            char extra;
+
+            if (!(input >> sizeChoice) || (input >> extra) ||
+                sizeChoice < 1 || sizeChoice > 5)
+            {
+                std::cout << "Please enter one whole number from 1 to 5.\n";
+                continue;
+            }
+
+            break;
+        }
+
+        // Menu choices start at 1, but array indexes start at 0.
+        int studentCount = sizes[sizeChoice - 1];
+
+        std::string filename =
+            "students-" + std::to_string(studentCount) + ".txt";
+
+        std::cout << "Generating " << filename << "...\n";
+
+        if (!generateStudentFile(filename, studentCount))
+        {
+            std::cerr << "Could not generate " << filename << ".\n";
+            return 1;
+        }
+
+        std::cout << "Created " << filename << " with "
+                  << studentCount << " students.\n";
+
+        return 0;
+    }
 
     std::vector<Person> students;
 
@@ -89,13 +160,24 @@ int main()
         break;
     }
 
+    double readSeconds = 0.0;
+
     if (source == 2)
     {
-        std::ifstream file("Students.txt");
+        std::string filename;
 
-        if (!file.is_open())
+        std::cout << "Enter the input filename (for example, students-test.txt): ";
+
+        if (!std::getline(std::cin, filename))
+            return 1;
+
+        auto readStart = std::chrono::steady_clock::now();
+
+        std::ifstream file(filename);
+
+        if (!file)
         {
-            std::cout << "Could not open Students.txt.\n";
+            std::cerr << "Could not open " << filename << ".\n";
             return 1;
         }
 
@@ -120,6 +202,13 @@ int main()
 
             students.push_back(student);
         }
+
+        file.close();
+
+        auto readEnd = std::chrono::steady_clock::now();
+
+        readSeconds =
+            std::chrono::duration<double>(readEnd - readStart).count();
     }
     else if (source == 1)
     {
@@ -202,6 +291,8 @@ int main()
         break;
     }
 
+    auto sortStart = std::chrono::steady_clock::now();
+
     switch (sortChoice)
     {
     case 1:
@@ -241,42 +332,64 @@ int main()
         return 1;
     }
 
-    std::cout
-        << '\n'
-        << std::left
-        << std::setw(20) << "Name"
-        << std::setw(20) << "Surname";
+    auto sortEnd = std::chrono::steady_clock::now();
+
+    double sortSeconds =
+        std::chrono::duration<double>(sortEnd - sortStart).count();
+
+    auto splitStart = std::chrono::steady_clock::now();
+
+    std::vector<Person> passed;
+    std::vector<Person> failed;
+
+    for (const Person &student : students)
+    {
+        if (student.getFinalGrade() < 5.0)
+            failed.push_back(student);
+        else
+            passed.push_back(student);
+    }
+
+    auto splitEnd = std::chrono::steady_clock::now();
+
+    double splitSeconds =
+        std::chrono::duration<double>(splitEnd - splitStart).count();
+
+    std::cout << "Passed: " << passed.size() << '\n';
+    std::cout << "Failed: " << failed.size() << '\n';
+
+    auto writeStart = std::chrono::steady_clock::now();
+
+    if (!writeResults("passed.txt", passed, method))
+    {
+        std::cerr << "Could not write passed.txt.\n";
+        return 1;
+    }
+
+    if (!writeResults("failed.txt", failed, method))
+    {
+        std::cerr << "Could not write failed.txt.\n";
+        return 1;
+    }
+
+    auto writeEnd = std::chrono::steady_clock::now();
+
+    double writeSeconds =
+        std::chrono::duration<double>(writeEnd - writeStart).count();
+
+    std::cout << "Results saved to passed.txt and failed.txt.\n";
 
     if (source == 2)
     {
-        std::cout << std::setw(15) << "Final (Avg.)"
-                  << "Final (Med.)\n";
-    }
-    else if (method == 1)
-    {
-        std::cout << "Final (Avg.)\n";
-    }
-    else
-    {
-        std::cout << "Final (Med.)\n";
-    }
+        double totalSeconds =
+            readSeconds + sortSeconds + splitSeconds + writeSeconds;
 
-    // GO THROUGH ALL STORED STUDENTS AND PRINT EACH ONE
-    /* like in javscript
-            for (const student of students) {
-                student.print();
-            }
-    */
-    for (Person &student : students)
-    {
-        if (source == 2)
-        {
-            student.print(source == 2);
-        }
-        else
-        {
-            std::cout << student;
-        }
+        std::cout << std::fixed << std::setprecision(6)
+                  << "\nRead and calculate: " << readSeconds << " seconds\n"
+                  << "Sort: " << sortSeconds << " seconds\n"
+                  << "Split: " << splitSeconds << " seconds\n"
+                  << "Write both files: " << writeSeconds << " seconds\n"
+                  << "Total processing: " << totalSeconds << " seconds\n";
     }
 
     return 0;

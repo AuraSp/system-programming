@@ -71,3 +71,14 @@ Testing/
 # others
 /main
 /.vscode/
+
+# Already compiled program
+/students
+
+# Generated student datasets
+/students-[0-9]*.txt
+/students_[0-9]*.txt
+
+# Generated results
+/passed.txt
+/failed.txt
