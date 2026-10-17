@@ -57,8 +57,8 @@ Existing output files with these names are replaced.
 
 ## File input
 
-Enter the filename when asked, for example `students-test.txt` or
-`students-1000.txt`. You do not need to rename it to `Students.txt`.
+For your first run, choose `2` to generate a student file, then choose
+`1` for 1,000 students. Run the program again and select that file from the list to calculate grades.
 Filenames are case-sensitive on Linux.
 
 The first line is a header. Each following line contains a first name, surname, homework marks, and the exam mark **last**. Use spaces or tabs between values; each name must be a single word.
