@@ -6,7 +6,8 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include <chrono> // For measuring elpsed time
+#include <chrono>     // For measuring elpsed time
+#include <filesystem> // Allows us to find files in a folder.
 
 int main()
 {
@@ -165,12 +166,85 @@ int main()
     if (source == 2)
     {
         std::string filename;
+        std::vector<std::string> availableFiles;
 
-        std::cout << "Enter the input filename (for example, students-test.txt): ";
+        // Find .txt files in the folder the program is running from.
+        try
+        {
+            for (const auto &entry : std::filesystem::directory_iterator("."))
+            {
+                if (!entry.is_regular_file())
+                    continue;
 
-        if (!std::getline(std::cin, filename))
-            return 1;
+                if (entry.path().extension() != ".txt")
+                    continue;
 
+                std::string name = entry.path().filename().string();
+
+                // These contain results, not the original student marks.
+                if (name == "passed.txt" || name == "failed.txt")
+                    continue;
+
+                availableFiles.push_back(name);
+            }
+        }
+        catch (const std::filesystem::filesystem_error &)
+        {
+            availableFiles.clear();
+            std::cout << "Could not list files. Use 0 to enter a filename manually.\n";
+        }
+
+        // Keep the displayed order consistent.
+        std::sort(availableFiles.begin(), availableFiles.end());
+
+        std::cout << "\nAvailable student files:\n";
+
+        if (availableFiles.empty())
+            std::cout << "No available .txt files found.\n";
+
+        for (std::size_t i = 0; i < availableFiles.size(); ++i)
+        {
+            std::cout << i + 1 << ". " << availableFiles[i] << '\n';
+        }
+
+        std::cout << "0. Enter another filename or path\n";
+
+        while (true)
+        {
+            std::cout << "Choose a file: ";
+
+            std::string line;
+            if (!std::getline(std::cin, line))
+                return 1;
+
+            std::istringstream input(line);
+            int choice;
+            char extra;
+
+            if (!(input >> choice) || (input >> extra) ||
+                choice < 0 ||
+                static_cast<std::size_t>(choice) > availableFiles.size())
+            {
+                std::cout << "Enter one whole number from 0 to "
+                          << availableFiles.size() << ".\n";
+                continue;
+            }
+
+            if (choice == 0)
+            {
+                std::cout << "Enter the filename or path: ";
+
+                if (!std::getline(std::cin, filename))
+                    return 1;
+            }
+            else
+            {
+                // Menu numbers start at 1; vector indexes start at 0.
+                filename = availableFiles[choice - 1];
+            }
+
+            break;
+        }
         auto readStart = std::chrono::steady_clock::now();
 
         std::ifstream file(filename);
@@ -201,6 +275,18 @@ int main()
                 return 1;
 
             students.push_back(student);
+        }
+
+        if (file.bad())
+        {
+            std::cerr << "An error occurred while reading the file.\n";
+            return 1;
+        }
+
+        if (students.empty())
+        {
+            std::cerr << "The file contains no student records.\n";
+            return 1;
         }
 
         file.close();
