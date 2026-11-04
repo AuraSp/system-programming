@@ -5,7 +5,7 @@
 
 bool writeResults(
     const std::string &filename,
-    const std::vector<Person> &students,
+    const std::list<Person> &students,
     int method)
 {
     std::ofstream output(filename);
