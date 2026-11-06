@@ -3,11 +3,11 @@
 
 #include "Person.h"
 #include <string>
-#include <vector>
+#include <list>
 
 bool writeResults(
     const std::string &filename,
-    const std::vector<Person> &students,
+    const std::list<Person> &students,
     int method);
 
 #endif
