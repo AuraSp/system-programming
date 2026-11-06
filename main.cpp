@@ -126,6 +126,31 @@ int main()
         break;
     }
 
+    int strategy = 0;
+
+    while (true)
+    {
+        std::cout << "\nChoose splitting strategy:\n"
+                  << "1. Keep all students and create passed/failed groups\n"
+                  << "2. Move failed students out and keep passed students\n"
+                  << "Choice: ";
+
+        std::string line;
+        if (!std::getline(std::cin >> std::ws, line))
+            return 1;
+
+        std::istringstream input(line);
+        char extra;
+
+        if ((input >> strategy) && !(input >> extra) &&
+            (strategy == 1 || strategy == 2))
+        {
+            break;
+        }
+
+        std::cout << "Please enter 1 or 2.\n";
+    }
+
     int source = 0;
 
     while (true)
@@ -428,25 +453,56 @@ int main()
     std::vector<Person> passed;
     std::vector<Person> failed;
 
-    for (const Person &student : students)
+    if (strategy == 1)
     {
-        if (student.getFinalGrade() < 5.0)
-            failed.push_back(student);
-        else
-            passed.push_back(student);
+        // Keep the original students and copy each into its group.
+        for (const Person &student : students)
+        {
+            if (student.getFinalGrade() < 5.0)
+                failed.push_back(student);
+            else
+                passed.push_back(student);
+        }
     }
+    else
+    {
+        // Keep passed students at the front of the original vector.
+        std::size_t kept = 0;
+
+        for (std::size_t i = 0; i < students.size(); ++i)
+        {
+            if (students[i].getFinalGrade() < 5.0)
+            {
+                failed.push_back(students[i]);
+            }
+            else
+            {
+                if (kept != i)
+                    students[kept] = students[i];
+
+                ++kept;
+            }
+        }
+
+        // Remove the leftover entries after the passed students.
+        students.resize(kept);
+    }
+
+    // Refer to whichever container now holds passed students.
+    // The & means this does not create another copy.
+    const auto &passedResults = (strategy == 1) ? passed : students;
 
     auto splitEnd = std::chrono::steady_clock::now();
 
     double splitSeconds =
         std::chrono::duration<double>(splitEnd - splitStart).count();
 
-    std::cout << "Passed: " << passed.size() << '\n';
+    std::cout << "Passed: " << passedResults.size() << '\n';
     std::cout << "Failed: " << failed.size() << '\n';
 
     auto writeStart = std::chrono::steady_clock::now();
 
-    if (!writeResults("passed.txt", passed, method))
+    if (!writeResults("passed.txt", passedResults, method))
     {
         std::cerr << "Could not write passed.txt.\n";
         return 1;
