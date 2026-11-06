@@ -3,7 +3,6 @@
 #include "ResultsWriter.h"
 
 #include <algorithm>
-#include <list>
 #include <vector>
 #include <iomanip>
 #include <fstream>
@@ -84,7 +83,7 @@ int main()
         return 0;
     }
 
-    std::list<Person> students;
+    std::vector<Person> students;
 
     int method = 0;
 
@@ -409,7 +408,7 @@ int main()
     switch (sortChoice)
     {
     case 1:
-        students.sort(
+        std::sort(students.begin(), students.end(),
                   [](const Person &a, const Person &b)
                   {
                       return a.getName() < b.getName();
@@ -417,7 +416,7 @@ int main()
         break;
 
     case 2:
-        students.sort(
+        std::sort(students.begin(), students.end(),
                   [](const Person &a, const Person &b)
                   {
                       return a.getName() > b.getName();
@@ -425,7 +424,7 @@ int main()
         break;
 
     case 3:
-        students.sort(
+        std::sort(students.begin(), students.end(),
                   [](const Person &a, const Person &b)
                   {
                       return a.getFinalGrade() < b.getFinalGrade();
@@ -433,7 +432,7 @@ int main()
         break;
 
     case 4:
-        students.sort(
+        std::sort(students.begin(), students.end(),
                   [](const Person &a, const Person &b)
                   {
                       return a.getFinalGrade() > b.getFinalGrade();
@@ -452,8 +451,8 @@ int main()
 
     auto splitStart = std::chrono::steady_clock::now();
 
-    std::list<Person> passed;
-    std::list<Person> failed;
+    std::vector<Person> passed;
+    std::vector<Person> failed;
 
     if (strategy == 1)
     {

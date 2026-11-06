@@ -7,7 +7,7 @@
 
 bool writeResults(
     const std::string &filename,
-    const std::list<Person> &students,
+    const std::vector<Person> &students,
     int method);
 
 #endif
