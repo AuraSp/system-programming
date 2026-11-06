@@ -337,6 +337,31 @@ int main()
         return 1;
     }
 
+    int strategy = 0;
+
+    while (true)
+    {
+        std::cout << "\nChoose splitting strategy:\n"
+                  << "1. Keep all students and create passed/failed groups\n"
+                  << "2. Move failed students out and keep passed students\n"
+                  << "Choice: ";
+
+        std::string line;
+        if (!std::getline(std::cin >> std::ws, line))
+            return 1;
+
+        std::istringstream input(line);
+        char extra;
+
+        if ((input >> strategy) && !(input >> extra) &&
+            (strategy == 1 || strategy == 2))
+        {
+            break;
+        }
+
+        std::cout << "Please enter 1 or 2.\n";
+    }
+
     int sortChoice = 0;
 
     std::cout << "\nSort students by:\n"
@@ -385,34 +410,34 @@ int main()
     {
     case 1:
         students.sort(
-                  [](const Person &a, const Person &b)
-                  {
-                      return a.getName() < b.getName();
-                  });
+            [](const Person &a, const Person &b)
+            {
+                return a.getName() < b.getName();
+            });
         break;
 
     case 2:
         students.sort(
-                  [](const Person &a, const Person &b)
-                  {
-                      return a.getName() > b.getName();
-                  });
+            [](const Person &a, const Person &b)
+            {
+                return a.getName() > b.getName();
+            });
         break;
 
     case 3:
         students.sort(
-                  [](const Person &a, const Person &b)
-                  {
-                      return a.getFinalGrade() < b.getFinalGrade();
-                  });
+            [](const Person &a, const Person &b)
+            {
+                return a.getFinalGrade() < b.getFinalGrade();
+            });
         break;
 
     case 4:
         students.sort(
-                  [](const Person &a, const Person &b)
-                  {
-                      return a.getFinalGrade() > b.getFinalGrade();
-                  });
+            [](const Person &a, const Person &b)
+            {
+                return a.getFinalGrade() > b.getFinalGrade();
+            });
         break;
 
     default:
@@ -430,25 +455,49 @@ int main()
     std::list<Person> passed;
     std::list<Person> failed;
 
-    for (const Person &student : students)
+    if (strategy == 1)
     {
-        if (student.getFinalGrade() < 5.0)
-            failed.push_back(student);
-        else
-            passed.push_back(student);
+        for (const Person &student : students)
+        {
+            if (student.getFinalGrade() < 5.0)
+                failed.push_back(student);
+            else
+                passed.push_back(student);
+        }
     }
+    else
+    {
+        auto it = students.begin();
+
+        while (it != students.end())
+        {
+            if (it->getFinalGrade() < 5.0)
+            {
+                auto failedStudent = it;
+                ++it;
+
+                failed.splice(failed.end(), students, failedStudent);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    const auto &passedResults = (strategy == 1) ? passed : students;
 
     auto splitEnd = std::chrono::steady_clock::now();
 
     double splitSeconds =
         std::chrono::duration<double>(splitEnd - splitStart).count();
 
-    std::cout << "Passed: " << passed.size() << '\n';
+    std::cout << "Passed: " << passedResults.size() << '\n';
     std::cout << "Failed: " << failed.size() << '\n';
 
     auto writeStart = std::chrono::steady_clock::now();
 
-    if (!writeResults("passed.txt", passed, method))
+    if (!writeResults("passed.txt", passedResults, method))
     {
         std::cerr << "Could not write passed.txt.\n";
         return 1;
