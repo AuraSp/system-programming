@@ -10,6 +10,7 @@
 #include <sstream>
 #include <chrono>     // For measuring elpsed time
 #include <filesystem> // Allows us to find files in a folder.
+#include <iterator>   // For std::back_inserter
 
 int main()
 {
@@ -457,13 +458,23 @@ int main()
 
     if (strategy == 1)
     {
-        for (const Person &student : students)
-        {
-            if (student.getFinalGrade() < 5.0)
-                failed.push_back(student);
-            else
-                passed.push_back(student);
-        }
+        // Copy everyone except failed students into passed.
+        std::remove_copy_if(
+            students.begin(), students.end(),
+            std::back_inserter(passed),
+            [](const Person &student)
+            {
+                return student.getFinalGrade() < 5.0;
+            });
+
+        // Copy everyone except passed students into failed.
+        std::remove_copy_if(
+            students.begin(), students.end(),
+            std::back_inserter(failed),
+            [](const Person &student)
+            {
+                return student.getFinalGrade() >= 5.0;
+            });
     }
     else
     {
