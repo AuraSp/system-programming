@@ -87,3 +87,5 @@ Testing/
 /students-deque
 /benchmark.py
 /benchmark-results/
+/passed*-strategy*.txt
+/failed*-strategy*.txt
